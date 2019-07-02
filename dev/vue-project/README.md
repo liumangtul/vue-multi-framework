@@ -5,24 +5,14 @@
 npm install
 ```
 
-### Compiles and hot-reloads for development
+### Compiles
 ```
-npm run serve
-```
-
-### Compiles and minifies for production
-```
-npm run build
-```
-
-### Run your tests
-```
-npm run test
-```
-
-### Lints and fixes files
-```
-npm run lint
+ // 打包到branches下
+ npm run build demo/v1.0.0 
+ // 打包到trunks下
+ npm run build demo/v1.0.0 prod 
+ // 热更新
+ npm run serve demo/v1.0.0 
 ```
 
 ### Customize configuration
