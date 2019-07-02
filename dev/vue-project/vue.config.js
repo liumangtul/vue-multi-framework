@@ -16,7 +16,7 @@ var enviromentPath = environment == 'build' ? ( args.length == 5 && args[4] == '
 
 var config = {
     outputDir:enviromentPath,
-    publicPath:'/vue/'+inputPath+'/',
+    publicPath:'/assets/app/vue/'+inputPath+'/',
     indexPath :  'index.html',
     assetsDir : '',
     filenameHashing : false,
