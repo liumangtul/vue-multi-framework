@@ -11,7 +11,7 @@ if(!pathReg.test(path)){
 }else{
     console.log('----path----',path)
     mkdir(pathLib.resolve(basePath,path),()=>{
-        
+
         dirs.forEach(dir=>{
             mkdir(pathLib.resolve(basePath,path,dir),()=>{
                 console.log('---dir---',dir)
@@ -38,7 +38,7 @@ function mkdir(
     cb,
     opt = {
         recursive : true
-}){
+    }){
     fs.mkdir(url,{
         recursive:opt.recursive
     },err=>{
@@ -66,7 +66,7 @@ function writeFile(
                         return false;
                     }
                     cb && cb(url,file,err);
-            });
+                });
         }else{
             console.error(url.slice(url.lastIndexOf('/')+1)+'文件已存在')
         }
