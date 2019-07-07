@@ -1,0 +1,24 @@
+{{#block "sprites"}}
+
+    {{#block "spritesheet"}}
+
+        $img:url('{{{spritesheet.escaped_image}}}');
+        .sprite-icon-{{{spritesheet_info.strings.name}}}{
+               background-size: rem({{spritesheet.width}}) rem({{spritesheet.height}});
+               background-repeat:no-repeat;
+               display:inline-block;
+        };
+
+    {{/block}}
+
+    {{#each sprites}}
+
+        .sprite-icon-{{{strings.name}}} {
+              background-image: $img;
+              background-position: rem({{offset_x}}) rem({{offset_y}});
+              width: rem({{width}});
+              height: rem({{height}});
+        };
+    {{/each}}
+
+{{/block}}

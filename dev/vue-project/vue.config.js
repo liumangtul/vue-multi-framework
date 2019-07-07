@@ -4,11 +4,12 @@
 
 var path = require('path');
 var fs = require('fs');
+const SpritesmithPlugin = require("webpack-spritesmith"); //引入雪碧图
 
 var args = process.argv.splice(2);
 var environment = args[0];
 var sourcePath = environment == 'build' ? args[5] : args[2];
-console.log('----Arguments----',args,sourcePath)
+// console.log('----Arguments----',args,sourcePath)
 var inputPath = sourcePath.replace(/^(\S+\/)[vV]([0-9])[0-9.]{0,}$/img,'$1v$2');
 var dir = inputPath.split('/')[0];
 // console.log('------inputPath------',inputPath);
@@ -21,7 +22,7 @@ let isScss = fs.readdirSync(path.resolve(__dirname,`src/${sourcePath}/assets`)).
 if(isScss){
     let url = path.resolve(__dirname,`src/${sourcePath}/assets/scss`);
     let files = fs.readdirSync(url);
-    console.log(files)
+    // console.log(files)
     ;(function iterator(i){
         if(!!files[i]){
             let fileName = path.resolve(url, files[i]);
@@ -32,7 +33,7 @@ if(isScss){
     })(0);
 }
 
-console.log('全局scss',dirs);
+// console.log('全局scss',dirs);
 
 var config = {
     outputDir:enviromentPath,
@@ -72,14 +73,188 @@ var config = {
                     })
                     .end()
             })
+
+            // sprites
+            // 模板 for pc
+            const generateSpritePX = function (data) {
+                let sheet = data.spritesheet;
+                // 拼接class名
+                let basename = 'sprite-' + path.basename(sheet.escaped_image, '.png');
+                let mArr = basename.match(/-(\d+)x$/);
+                let x = mArr ? mArr[1] : 1;
+
+                console.log('pc(px)',basename, x + 'x');
+
+                let shared = `@charset "utf-8";
+                    @function spx($px){
+                        @return $px+px
+                    }
+                    .${basename} {
+                        background-image: url(${sheet.escaped_image});
+                        background-repeat: no-repeat;
+                        background-size:spx(${sheet.width / x}) auto;
+                    }`;
+                let perSprite = data.sprites.map(function (sprite) {
+                    return `.${basename}-${sprite.name} {
+                        @extend .${basename};
+                        width: spx(${sprite.width / x});
+                        height: spx(${sprite.height / x});
+                        background-position: spx(${sprite.offset_x / x}) spx(${sprite.offset_y / x});
+                    }`;
+                }).join('\n');
+                return (shared + '\n' + perSprite).replace(/ {4}/g, '');
+            };
+            // 模板 for mobile
+            const generateSpriteREM = function (data) {
+                let sheet = data.spritesheet;
+                // 拼接class名
+                let basename = path.basename(sheet.escaped_image, '.png');
+                let mArr = basename.match(/-(\d+)x$/);
+                let x = mArr ? mArr[1] : 1;
+
+                console.log('mobile(rem)',basename, x + 'x');
+
+                let shared = `@charset "utf-8";
+                    /* res.leju.com/resources/rem.js */
+                    @function srem($px){
+                        @return $px*(1/50)*1rem
+                    }
+                    .${basename} {
+                        background-image: url(${sheet.escaped_image});
+                        background-repeat: no-repeat;
+                        background-size:srem(${sheet.width / x}) auto;
+                    }`;
+                let perSprite = data.sprites.map(function (sprite) {
+                    return `.${basename}-${sprite.name} {
+                                @extend .${basename};
+                                width: srem(${sprite.width / x + 8});
+                                height: srem(${sprite.height / x + 8});
+                                background-position: srem(${sprite.offset_x / x + 4}) srem(${sprite.offset_y / x + 4});
+                            }`;
+                }).join('\n');
+                return (shared + '\n' + perSprite).replace(/ {4}/g, '');
+            };
+            // 模板 for wxapp
+            const generateSpriteRPX = function (data) {
+                let sheet = data.spritesheet;
+                // 拼接class名
+                let basename = 'sprite-' + path.basename(sheet.escaped_image, '.png');
+
+                let mArr = basename.match(/-(\d+)x$/);
+                let x = mArr ? mArr[1] : 1;
+
+                console.log('wxapp(rpx)',basename, x + 'x');
+
+                let shared = `@charset "utf-8";
+                            @function srpx($px){
+                                @return $px+rpx
+                            }
+                            .${basename} {
+                                background-image: url(${sheet.escaped_image});
+                                background-repeat: no-repeat;
+                                background-size:srpx(${sheet.width / x}) auto;
+                            }`;
+                let perSprite = data.sprites.map(function (sprite) {
+                    return `.${basename}-${sprite.name} {
+                                @extend .${basename};
+                                width: srpx(${sprite.width / x + 8});
+                                height: srpx(${sprite.height / x + 8});
+                                background-position: srpx(${sprite.offset_x / x + 4}) srpx(${sprite.offset_y / x + 4});
+                            }`;
+                }).join('\n');
+                return (shared + '\n' + perSprite).replace(/ {4}/g, '');
+            };
+
+            ;(()=> {
+                let dirs = fs.readdirSync(path.resolve(__dirname, `src/${sourcePath}/sprites`));
+                if (dirs.length > 0) {
+                    let dirs = fs.readdirSync(path.resolve(__dirname, `src/${sourcePath}/sprites`));
+                    if (dirs.length > 0) {
+                        let confs = [];
+                        dirs.forEach(filename => {
+                            let stat = fs.statSync(path.resolve(__dirname, `src/${sourcePath}/sprites`, filename));
+                            if (stat.isDirectory()) {
+                                let conf = generateSpritesmith(filename, args);
+                                confs.push(conf[0]);
+                                fs.writeFileSync(path.resolve(__dirname,`log_${filename}.js`),JSON.stringify(conf));
+                                ;((conf)=>{
+                                    config
+                                        .plugin(`spritesmith_${filename}`)
+                                        .use(SpritesmithPlugin)
+                                        .tap(args=>{
+                                            return conf;
+                                        })
+                                        .end();
+                                })(conf);
+                            }
+                        });
+                    }
+                }
+            })();
+
+            function generateSpritesmith(filename, args){
+                let cwd = path.resolve(__dirname, `src/${sourcePath}/sprites/${filename}`);
+                let target = {
+                    image: path.resolve(__dirname, `src/${sourcePath}/assets/images/sprite_${filename}.png`),
+                    css: [
+                        [
+                            path.resolve(__dirname, `src/${sourcePath}/assets/scss/sprite_${filename}.scss`),
+                            {
+                                // format: "function_based_template"
+                                format:'generateSpriteREM'
+                            }
+                        ]
+                    ]
+                };
+                // console.log('---options----',cwd,target,'-----End-options----');
+                // console.log('-0cwd------',cwd)
+                let conf = {
+                    // 输入
+                    src: {
+                        cwd,
+                        glob: "*.png"
+                    },
+                    // 输出（css，sprites.png）
+                    target,
+                    customTemplates: {  generateSpriteREM },
+                    // customTemplates: {
+                    //     function_based_template: path.resolve(
+                    //         __dirname,
+                    //         "./my_handlebars_template.handlebars"
+                    //     )
+                    // },
+                    // 样式文件中调用雪碧图地址写法
+                    apiOptions: {
+                        // generateSpriteName:function(data){
+                        //     console.log('aaaaaaaaaaaaa',data)
+                        //     return filename;
+                        // },
+                        cssImageRef: `src/${sourcePath}/assets/images/sprite_${filename}.png`
+                    },
+                    spritesmithOptions: {
+                        algorithm: "binary-tree",
+                        padding:20
+                    },
+                    // resolve: {
+                    //     modules: ["node_modules", `src/${sourcePath}/assets/images`]
+                    // }
+                };
+                // args = args.concat(conf);
+                // console.log('--====---',conf)
+                // console.log('====----===',args)
+                return [conf];
+            }
+
         }
+
+
 
     }
 };
 
 
-console.log(JSON.stringify(config))
+// console.log(JSON.stringify(config))
 
-console.log('输出路径---->',path.resolve(enviromentPath));
+// console.log('输出路径---->',path.resolve(enviromentPath));
 
 module.exports = config;

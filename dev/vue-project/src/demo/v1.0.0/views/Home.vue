@@ -4,6 +4,8 @@
     <h1>This is an HOME page</h1>
     <img src="../assets/logo.png" alt="">
     <div class="bg-box"></div>
+    <div class="test text-title"></div>
+    <div class="test text-search"></div>
   </div>
 </template>
 
