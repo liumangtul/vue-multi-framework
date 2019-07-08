@@ -2,7 +2,7 @@ var fs = require('fs');
 var pathLib = require('path');
 var basePath = pathLib.resolve(__dirname,'src/');
 const dirs = ['assets','components','public','views'];
-const files = ['App.vue','main.js','router.js','store.js'];
+const files = ['App.vue','main.js','router.js','store.js','../webpack.config.js'];
 
 var path = process.argv.splice(2)[0];
 var pathReg = /^([0-9a-zA-Z-_]+\/)[vV]([0-9])[0-9.]{0,}$/img;
@@ -68,7 +68,7 @@ function writeFile(
                     cb && cb(url,file,err);
                 });
         }else{
-            console.error(url.slice(url.lastIndexOf('/')+1)+'文件已存在')
+            console.error('【WAR】写入文件失败:'+url.slice(url.lastIndexOf('/')+1)+'文件已存在')
         }
     })
 }

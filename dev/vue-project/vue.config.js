@@ -34,7 +34,7 @@ if(isScss){
 }
 
 // console.log('全局scss',dirs);
-
+require(path.resolve(__dirname,`src/${sourcePath.split('/')[0]}/webpack.config.js`))
 var config = {
     outputDir:enviromentPath,
     publicPath:'/assets/app/vue/'+inputPath+'/',
@@ -74,6 +74,8 @@ var config = {
                     .end()
             })
 
+            let targetPlatform = global.targetPlatform || ['original', 'mobile', 'pc'];
+            console.log('----=====targetPlatform====----',targetPlatform);
             // sprites
             // 模板 for pc
             const generateSpritePX = function (data) {
@@ -134,61 +136,28 @@ var config = {
                 }).join('\n');
                 return (shared + '\n' + perSprite).replace(/ {4}/g, '');
             };
-            // 模板 for wxapp
-            const generateSpriteRPX = function (data) {
-                let sheet = data.spritesheet;
-                // 拼接class名
-                let basename = 'sprite-' + path.basename(sheet.escaped_image, '.png');
-
-                let mArr = basename.match(/-(\d+)x$/);
-                let x = mArr ? mArr[1] : 1;
-
-                console.log('wxapp(rpx)',basename, x + 'x');
-
-                let shared = `@charset "utf-8";
-                            @function srpx($px){
-                                @return $px+rpx
-                            }
-                            .${basename} {
-                                background-image: url(${sheet.escaped_image});
-                                background-repeat: no-repeat;
-                                background-size:srpx(${sheet.width / x}) auto;
-                            }`;
-                let perSprite = data.sprites.map(function (sprite) {
-                    return `.${basename}-${sprite.name} {
-                                @extend .${basename};
-                                width: srpx(${sprite.width / x + 8});
-                                height: srpx(${sprite.height / x + 8});
-                                background-position: srpx(${sprite.offset_x / x + 4}) srpx(${sprite.offset_y / x + 4});
-                            }`;
-                }).join('\n');
-                return (shared + '\n' + perSprite).replace(/ {4}/g, '');
-            };
 
             ;(()=> {
-                let dirs = fs.readdirSync(path.resolve(__dirname, `src/${sourcePath}/sprites`));
-                if (dirs.length > 0) {
-                    let dirs = fs.readdirSync(path.resolve(__dirname, `src/${sourcePath}/sprites`));
-                    if (dirs.length > 0) {
-                        let confs = [];
-                        dirs.forEach(filename => {
-                            let stat = fs.statSync(path.resolve(__dirname, `src/${sourcePath}/sprites`, filename));
-                            if (stat.isDirectory()) {
-                                let conf = generateSpritesmith(filename, args);
-                                confs.push(conf[0]);
-                                fs.writeFileSync(path.resolve(__dirname,`log_${filename}.js`),JSON.stringify(conf));
-                                ;((conf)=>{
-                                    config
-                                        .plugin(`spritesmith_${filename}`)
-                                        .use(SpritesmithPlugin)
-                                        .tap(args=>{
-                                            return conf;
-                                        })
-                                        .end();
-                                })(conf);
-                            }
-                        });
-                    }
+                let spritesDirs = fs.readdirSync(path.resolve(__dirname, `src/${sourcePath}/sprites`));
+                if (spritesDirs.length > 0) {
+                    let confs = [];
+                    spritesDirs.forEach(filename => {
+                        let stat = fs.statSync(path.resolve(__dirname, `src/${sourcePath}/sprites`, filename));
+                        if (stat.isDirectory()) {
+                            let conf = generateSpritesmith(filename, args);
+                            confs.push(conf[0]);
+                            ;((conf)=>{
+                                config
+                                    .plugin(`spritesmith_${filename}`)
+                                    .use(SpritesmithPlugin)
+                                    .tap(args=>{
+                                        return conf;
+                                    })
+                                    .end();
+                            })(conf);
+                        }
+                    });
+                    fs.writeFileSync(path.resolve(__dirname,`log.json`),JSON.stringify(confs));
                 }
             })();
 
@@ -196,18 +165,26 @@ var config = {
                 let cwd = path.resolve(__dirname, `src/${sourcePath}/sprites/${filename}`);
                 let target = {
                     image: path.resolve(__dirname, `src/${sourcePath}/assets/images/sprite_${filename}.png`),
-                    css: [
-                        [
-                            path.resolve(__dirname, `src/${sourcePath}/assets/scss/sprite_${filename}.scss`),
-                            {
-                                // format: "function_based_template"
-                                format:'generateSpriteREM'
-                            }
-                        ]
-                    ]
+                    css: []
                 };
-                // console.log('---options----',cwd,target,'-----End-options----');
-                // console.log('-0cwd------',cwd)
+                if (targetPlatform.indexOf('original') !== -1) {
+                    target.css.push(
+                        // 默认生成的文件
+                        [path.resolve(__dirname, `src/${sourcePath}/assets/scss/sprite_${filename}o.scss`)]
+                    );
+                }
+                if (targetPlatform.indexOf('mobile') !== -1) {
+                    target.css.push(
+                        // rem scss
+                        [path.resolve(__dirname, `src/${sourcePath}/assets/scss/sprite_${filename}.rem.scss`), { format: 'generateSpriteREM' }]
+                    );
+                }
+                if (targetPlatform.indexOf('pc') !== -1) {
+                    target.css.push(
+                        // rpx wxss
+                        [path.resolve(__dirname, `src/${sourcePath}/assets/scss/sprite_${filename}.px.scss`), { format: 'generateSpritePX' }],
+                    );
+                }
                 let conf = {
                     // 输入
                     src: {
@@ -216,32 +193,16 @@ var config = {
                     },
                     // 输出（css，sprites.png）
                     target,
-                    customTemplates: {  generateSpriteREM },
-                    // customTemplates: {
-                    //     function_based_template: path.resolve(
-                    //         __dirname,
-                    //         "./my_handlebars_template.handlebars"
-                    //     )
-                    // },
+                    customTemplates: { generateSpritePX, generateSpriteREM },
                     // 样式文件中调用雪碧图地址写法
                     apiOptions: {
-                        // generateSpriteName:function(data){
-                        //     console.log('aaaaaaaaaaaaa',data)
-                        //     return filename;
-                        // },
                         cssImageRef: `src/${sourcePath}/assets/images/sprite_${filename}.png`
                     },
                     spritesmithOptions: {
                         algorithm: "binary-tree",
                         padding:20
                     },
-                    // resolve: {
-                    //     modules: ["node_modules", `src/${sourcePath}/assets/images`]
-                    // }
                 };
-                // args = args.concat(conf);
-                // console.log('--====---',conf)
-                // console.log('====----===',args)
                 return [conf];
             }
 
