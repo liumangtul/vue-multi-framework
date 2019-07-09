@@ -1,7 +1,7 @@
 var fs = require('fs');
 var pathLib = require('path');
 var basePath = pathLib.resolve(__dirname,'src/');
-const dirs = ['assets','components','public','views'];
+const dirs = ['assets','components','public','views','sprites'];
 const files = ['App.vue','main.js','router.js','store.js','../webpack.config.js'];
 
 var path = process.argv.splice(2)[0];

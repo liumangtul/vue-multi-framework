@@ -1,10 +1,12 @@
 // npm run build demo/v1.0.0 打包到trunks下
-// npm run watch demo/v1.0.0 prod 打包到branches下
+// npm run watch demo/v1.0.0 打包到branches下
 // npm run serve demo/v1.0.0 热更新
 
 var path = require('path');
 var fs = require('fs');
 const SpritesmithPlugin = require("webpack-spritesmith"); //引入雪碧图
+const resolve = dir => path.join(__dirname, dir);
+
 
 var args = process.argv.splice(2);
 var environment = args[0];
@@ -14,8 +16,9 @@ var inputPath = sourcePath.replace(/^(\S+\/)[vV]([0-9])[0-9.]{0,}$/img,'$1v$2');
 var dir = inputPath.split('/')[0];
 // console.log('------inputPath------',inputPath);
 
-var enviromentPath = environment == 'build' ? ( args.length == 6 && args[4] == 'prod' ? '../../trunk/assets/app/vue/'+ inputPath : '../../branches/assets/app/vue/'+ inputPath ) : '../../branches/vue/'+ inputPath ;
-
+var enviroment = environment == 'build' ? ( args.length == 6 && args[4] == 'prod' ? 'prod' : 'dev' ) : 'dev';
+// 打包根目录名
+const rootDir = enviroment == 'prod' ? 'trunk' : 'branches';
 
 let dirs = [];
 let isScss = fs.readdirSync(path.resolve(__dirname,`src/${sourcePath}/assets`)).indexOf('scss')!=-1;
@@ -27,16 +30,16 @@ if(isScss){
         if(!!files[i]){
             let fileName = path.resolve(url, files[i]);
             let stat = fs.statSync(fileName);
-            if(stat.isFile() && /^\S+\.module.scss$/img.test(files[i])) dirs.push(fileName);
+            if(stat.isFile() && /^\S+\.common.scss$/img.test(files[i])) dirs.push(fileName);
             iterator(i+1);
         }
     })(0);
 }
-
+console.log('scss----',path.join(__dirname,`src/${sourcePath}`));
 // console.log('全局scss',dirs);
 require(path.resolve(__dirname,`src/${sourcePath.split('/')[0]}/webpack.config.js`))
 var config = {
-    outputDir:enviromentPath,
+    outputDir:`../../${rootDir}/assets/app/vue/${inputPath}`,
     publicPath:'/assets/app/vue/'+inputPath+'/',
     indexPath :  'index.html',
     assetsDir : '',
@@ -61,6 +64,12 @@ var config = {
         // 修复HMR
         config.resolve.symlinks(true);
         if(dirs.length>0){
+            //添加别名
+            config.resolve.alias
+                .set("@", resolve(`src/${sourcePath}`))
+                .set("assets", resolve(`src/${sourcePath}/assets`))
+                .end();
+
             // 配置全局scss
             const oneOfsMap = config.module.rule('scss').oneOfs.store
             //insert loader
@@ -81,11 +90,15 @@ var config = {
             const generateSpritePX = function (data) {
                 let sheet = data.spritesheet;
                 // 拼接class名
-                let basename = 'sprite-' + path.basename(sheet.escaped_image, '.png');
+                let basename = path.basename(sheet.escaped_image, '.png');
                 let mArr = basename.match(/-(\d+)x$/);
                 let x = mArr ? mArr[1] : 1;
 
-                console.log('pc(px)',basename, x + 'x');
+
+                let escapedImage = sheet.escaped_image;
+                escapedImage = `/assets/app/vue/${inputPath}/img/${basename}.png`;
+                sheet.escaped_image = escapedImage;
+                console.log('pc(px)',basename, x + 'x','雪碧图图片路径:',sheet.escaped_image);
 
                 let shared = `@charset "utf-8";
                     @function spx($px){
@@ -114,7 +127,10 @@ var config = {
                 let mArr = basename.match(/-(\d+)x$/);
                 let x = mArr ? mArr[1] : 1;
 
-                console.log('mobile(rem)',basename, x + 'x');
+                let escapedImage = sheet.escaped_image;
+                escapedImage = `/assets/app/vue/${inputPath}/img/${basename}.png`;
+                sheet.escaped_image = escapedImage;
+                console.log('mobile(rem)',basename, x + 'x','雪碧图图片路径:',sheet.escaped_image);
 
                 let shared = `@charset "utf-8";
                     /* res.leju.com/resources/rem.js */
@@ -122,7 +138,7 @@ var config = {
                         @return $px*(1/50)*1rem
                     }
                     .${basename} {
-                        background-image: url(${sheet.escaped_image});
+                        background-image: url("${sheet.escaped_image}");
                         background-repeat: no-repeat;
                         background-size:srem(${sheet.width / x}) auto;
                     }`;
@@ -164,7 +180,7 @@ var config = {
             function generateSpritesmith(filename, args){
                 let cwd = path.resolve(__dirname, `src/${sourcePath}/sprites/${filename}`);
                 let target = {
-                    image: path.resolve(__dirname, `src/${sourcePath}/assets/images/sprite_${filename}.png`),
+                    image: path.resolve(__dirname, `../../${rootDir}/assets/app/vue/${inputPath}/img/sprite_${filename}.png`),
                     css: []
                 };
                 if (targetPlatform.indexOf('original') !== -1) {
@@ -181,7 +197,7 @@ var config = {
                 }
                 if (targetPlatform.indexOf('pc') !== -1) {
                     target.css.push(
-                        // rpx wxss
+                        // pc scss
                         [path.resolve(__dirname, `src/${sourcePath}/assets/scss/sprite_${filename}.px.scss`), { format: 'generateSpritePX' }],
                     );
                 }
@@ -195,9 +211,9 @@ var config = {
                     target,
                     customTemplates: { generateSpritePX, generateSpriteREM },
                     // 样式文件中调用雪碧图地址写法
-                    apiOptions: {
-                        cssImageRef: `src/${sourcePath}/assets/images/sprite_${filename}.png`
-                    },
+                    // apiOptions: {
+                    //     cssImageRef: `src/${sourcePath}/assets/images/sprite_${filename}.png`
+                    // },
                     spritesmithOptions: {
                         algorithm: "binary-tree",
                         padding:20
@@ -216,6 +232,6 @@ var config = {
 
 // console.log(JSON.stringify(config))
 
-// console.log('输出路径---->',path.resolve(enviromentPath));
+console.log('输出路径---->',path.resolve(`../../${rootDir}/assets/app/vue/${inputPath}`));
 
 module.exports = config;

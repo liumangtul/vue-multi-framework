@@ -5,4 +5,4 @@
  *@template
  */
 
-global.targetPlatform = ['mobile'];
+// global.targetPlatform = ['mobile'];

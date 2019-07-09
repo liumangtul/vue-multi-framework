@@ -1,6 +1,6 @@
 <template>
     <header>
-        headerddd
+        <h1>头部信息</h1>
     </header>
 </template>
 
