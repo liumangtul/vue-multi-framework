@@ -25,17 +25,15 @@ let isScss = fs.readdirSync(path.resolve(__dirname,`src/${sourcePath}/assets`)).
 if(isScss){
     let url = path.resolve(__dirname,`src/${sourcePath}/assets/scss`);
     let files = fs.readdirSync(url);
-    // console.log(files)
-    ;(function iterator(i){
-        if(!!files[i]){
-            let fileName = path.resolve(url, files[i]);
-            let stat = fs.statSync(fileName);
-            if(stat.isFile() && /^\S+\.common.scss$/img.test(files[i])) dirs.push(fileName);
-            iterator(i+1);
+    files.forEach(file=>{
+        let fileName = path.resolve(url, file);
+        let stat = fs.statSync(fileName);
+        if(stat.isFile() && /^\S+\.common.scss$/img.test(file)){
+            dirs.push(fileName);
         }
-    })(0);
+    });
 }
-console.log('scss----',path.join(__dirname,`src/${sourcePath}`));
+// console.log('scss----',path.join(__dirname,`src/${sourcePath}`));
 // console.log('全局scss',dirs);
 require(path.resolve(__dirname,`src/${sourcePath.split('/')[0]}/webpack.config.js`))
 var config = {
@@ -63,13 +61,13 @@ var config = {
     chainWebpack: config => {
         // 修复HMR
         config.resolve.symlinks(true);
-        if(dirs.length>0){
-            //添加别名
-            config.resolve.alias
-                .set("@", resolve(`src/${sourcePath}`))
-                .set("assets", resolve(`src/${sourcePath}/assets`))
-                .end();
+        //添加别名
+        config.resolve.alias
+            .set("@", resolve(`src/${sourcePath}`))
+            .set("assets", resolve(`src/${sourcePath}/assets`))
+            .end();
 
+        if(dirs.length>0){
             // 配置全局scss
             const oneOfsMap = config.module.rule('scss').oneOfs.store
             //insert loader
@@ -82,102 +80,103 @@ var config = {
                     })
                     .end()
             })
+        }
 
-            let targetPlatform = global.targetPlatform || ['original', 'mobile', 'pc'];
-            console.log('----=====targetPlatform====----',targetPlatform);
-            // sprites
-            // 模板 for pc
-            const generateSpritePX = function (data) {
-                let sheet = data.spritesheet;
-                // 拼接class名
-                let basename = path.basename(sheet.escaped_image, '.png');
-                let mArr = basename.match(/-(\d+)x$/);
-                let x = mArr ? mArr[1] : 1;
+        let targetPlatform = global.targetPlatform || ['original', 'mobile', 'pc'];
+        console.log('----=====targetPlatform====----',targetPlatform);
+        // sprites
+        // 模板 for pc
+        const generateSpritePX = function (data) {
+            let sheet = data.spritesheet;
+            // 拼接class名
+            let basename = path.basename(sheet.escaped_image, '.png');
+            let mArr = basename.match(/-(\d+)x$/);
+            let x = mArr ? mArr[1] : 1;
 
 
-                let escapedImage = sheet.escaped_image;
-                escapedImage = `/assets/app/vue/${inputPath}/img/${basename}.png`;
-                sheet.escaped_image = escapedImage;
-                console.log('pc(px)',basename, x + 'x','雪碧图图片路径:',sheet.escaped_image);
+            let escapedImage = sheet.escaped_image;
+            escapedImage = `/assets/app/vue/${inputPath}/img/${basename}.png`;
+            sheet.escaped_image = escapedImage;
+            console.log('pc(px)',basename, x + 'x','雪碧图图片路径:',sheet.escaped_image);
 
-                let shared = `@charset "utf-8";
-                    @function spx($px){
-                        @return $px+px
-                    }
-                    .${basename} {
-                        background-image: url(${sheet.escaped_image});
-                        background-repeat: no-repeat;
-                        background-size:spx(${sheet.width / x}) auto;
-                    }`;
-                let perSprite = data.sprites.map(function (sprite) {
-                    return `.${basename}-${sprite.name} {
-                        @extend .${basename};
-                        width: spx(${sprite.width / x});
-                        height: spx(${sprite.height / x});
-                        background-position: spx(${sprite.offset_x / x}) spx(${sprite.offset_y / x});
-                    }`;
-                }).join('\n');
-                return (shared + '\n' + perSprite).replace(/ {4}/g, '');
-            };
-            // 模板 for mobile
-            const generateSpriteREM = function (data) {
-                let sheet = data.spritesheet;
-                // 拼接class名
-                let basename = path.basename(sheet.escaped_image, '.png');
-                let mArr = basename.match(/-(\d+)x$/);
-                let x = mArr ? mArr[1] : 1;
-
-                let escapedImage = sheet.escaped_image;
-                escapedImage = `/assets/app/vue/${inputPath}/img/${basename}.png`;
-                sheet.escaped_image = escapedImage;
-                console.log('mobile(rem)',basename, x + 'x','雪碧图图片路径:',sheet.escaped_image);
-
-                let shared = `@charset "utf-8";
-                    /* res.leju.com/resources/rem.js */
-                    @function srem($px){
-                        @return $px*(1/50)*1rem
-                    }
-                    .${basename} {
-                        background-image: url("${sheet.escaped_image}");
-                        background-repeat: no-repeat;
-                        background-size:srem(${sheet.width / x}) auto;
-                    }`;
-                let perSprite = data.sprites.map(function (sprite) {
-                    return `.${basename}-${sprite.name} {
-                                @extend .${basename};
-                                width: srem(${sprite.width / x + 8});
-                                height: srem(${sprite.height / x + 8});
-                                background-position: srem(${sprite.offset_x / x + 4}) srem(${sprite.offset_y / x + 4});
-                            }`;
-                }).join('\n');
-                return (shared + '\n' + perSprite).replace(/ {4}/g, '');
-            };
-
-            ;(()=> {
-                let spritesDirs = fs.readdirSync(path.resolve(__dirname, `src/${sourcePath}/sprites`));
-                if (spritesDirs.length > 0) {
-                    let confs = [];
-                    spritesDirs.forEach(filename => {
-                        let stat = fs.statSync(path.resolve(__dirname, `src/${sourcePath}/sprites`, filename));
-                        if (stat.isDirectory()) {
-                            let conf = generateSpritesmith(filename, args);
-                            confs.push(conf[0]);
-                            ;((conf)=>{
-                                config
-                                    .plugin(`spritesmith_${filename}`)
-                                    .use(SpritesmithPlugin)
-                                    .tap(args=>{
-                                        return conf;
-                                    })
-                                    .end();
-                            })(conf);
-                        }
-                    });
-                    fs.writeFileSync(path.resolve(__dirname,`log.json`),JSON.stringify(confs));
+            let shared = `@charset "utf-8";
+                @function spx($px){
+                    @return $px+px
                 }
-            })();
+                .${basename} {
+                    background-image: url(${sheet.escaped_image});
+                    background-repeat: no-repeat;
+                    background-size:spx(${sheet.width / x}) auto;
+                }`;
+            let perSprite = data.sprites.map(function (sprite) {
+                return `.${basename}-${sprite.name} {
+                    @extend .${basename};
+                    width: spx(${sprite.width / x});
+                    height: spx(${sprite.height / x});
+                    background-position: spx(${sprite.offset_x / x}) spx(${sprite.offset_y / x});
+                }`;
+            }).join('\n');
+            return (shared + '\n' + perSprite).replace(/ {4}/g, '');
+        };
+        // 模板 for mobile
+        const generateSpriteREM = function (data) {
+            let sheet = data.spritesheet;
+            // 拼接class名
+            let basename = path.basename(sheet.escaped_image, '.png');
+            let mArr = basename.match(/-(\d+)x$/);
+            let x = mArr ? mArr[1] : 1;
 
-            function generateSpritesmith(filename, args){
+            let escapedImage = sheet.escaped_image;
+            escapedImage = `/assets/app/vue/${inputPath}/img/${basename}.png`;
+            sheet.escaped_image = escapedImage;
+            console.log('mobile(rem)',basename, x + 'x','雪碧图图片路径:',sheet.escaped_image);
+
+            let shared = `@charset "utf-8";
+                /* res.leju.com/resources/rem.js */
+                @function srem($px){
+                    @return $px*(1/50)*1rem
+                }
+                .${basename} {
+                    background-image: url("${sheet.escaped_image}");
+                    background-repeat: no-repeat;
+                    background-size:srem(${sheet.width / x}) auto;
+                }`;
+            let perSprite = data.sprites.map(function (sprite) {
+                return `.${basename}-${sprite.name} {
+                            @extend .${basename};
+                            width: srem(${sprite.width / x + 8});
+                            height: srem(${sprite.height / x + 8});
+                            background-position: srem(${sprite.offset_x / x + 4}) srem(${sprite.offset_y / x + 4});
+                        }`;
+            }).join('\n');
+            return (shared + '\n' + perSprite).replace(/ {4}/g, '');
+        };
+
+        ;(()=> {
+            let spritesDirs = fs.readdirSync(path.resolve(__dirname, `src/${sourcePath}/sprites`));
+            if (spritesDirs.length > 0) {
+                let confs = [];
+                spritesDirs.forEach(filename => {
+                    let stat = fs.statSync(path.resolve(__dirname, `src/${sourcePath}/sprites`, filename));
+                    if (stat.isDirectory()) {
+                        let conf = generateSpritesmith(filename, args);
+                        confs.push(conf[0]);
+                        ;((conf)=>{
+                            config
+                                .plugin(`spritesmith_${filename}`)
+                                .use(SpritesmithPlugin)
+                                .tap(args=>{
+                                    return conf;
+                                })
+                                .end();
+                        })(conf);
+                    }
+                });
+                fs.writeFileSync(path.resolve(__dirname,`log.json`),JSON.stringify(confs));
+            }
+        })();
+
+        function generateSpritesmith(filename, args){
                 let cwd = path.resolve(__dirname, `src/${sourcePath}/sprites/${filename}`);
                 let target = {
                     image: path.resolve(__dirname, `../../${rootDir}/assets/app/vue/${inputPath}/img/sprite_${filename}.png`),
@@ -221,10 +220,6 @@ var config = {
                 };
                 return [conf];
             }
-
-        }
-
-
 
     }
 };

@@ -11,7 +11,7 @@
 
 
 <style lang="scss" scoped>
- @import './assets/scss/index.scss';
+ @import '@/assets/scss/index.scss';
   h1{
    color:red;
  }
