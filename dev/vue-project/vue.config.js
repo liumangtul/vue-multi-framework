@@ -34,8 +34,8 @@ const rootDir = environment == 'prod' ?
     'branches';
 //打包根域名
 const rootDomain = environment == 'prod' ?
-    'http://res.leju.com' :
-    ( environment == 'dev' ? 'http://res.bch.leju.com' : '' );
+    'http://test.bch.abc.com' :
+    ( environment == 'dev' ? 'http://test.trunk.abc.com' : '' );
 const outputDir = `../../${rootDir}/assets/app/vue/${outputPath}`;
 
 require(path.resolve(__dirname,`src/${sourcePath.split('/')[0]}/webpack.config.js`))
