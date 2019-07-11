@@ -1,10 +1,17 @@
-// npm run build demo/v1.0.0 打包到trunks下
-// npm run watch demo/v1.0.0 打包到branches下
-// npm run serve demo/v1.0.0 热更新
+/**
+ * 打包
+ *      npm run build demo 打包到trunks下
+        npm run watch demo 打包到branches下
+        npm run serve demo 热更新
+ * */
 
-var path = require('path');
-var fs = require('fs');
-var SpritesmithPlugin = require("webpack-spritesmith");
+
+const path = require('path');
+const fs = require('fs');
+const SpritesmithPlugin = require("webpack-spritesmith");
+const Utils = require('./webpack/utils');
+
+
 
 const resolve = dir => path.join(__dirname, dir);
 
@@ -15,30 +22,57 @@ const environment = args[0] == 'build' ?
     ( args.length == 6 && args[4] == 'prod' ? 'prod' : 'dev' ) :
     'local';
 
+const projectName = environment == 'local' ?
+                    args[2] :
+                    args[5];
+
+require(path.resolve(__dirname,`src/${projectName}/webpack.config.js`))
+
+//vx.x.x
+const version = global.pversion || new Utils().init().version;
+console.log('version----',version)
 //打包相对目录 example => demo/v1.0.0
-const sourcePath = environment == 'local' ?
-    args[2] :
-    args[5];
+const sourcePath = `${projectName}/${version}`;
 
 //输出相对目录 example => demo/v1
 const outputPath = sourcePath.replace(/^(\S+\/)[vV]([0-9])[0-9.]{0,}$/img,'$1v$2');
-
-const projectName = outputPath.split('/')[0];
-
-//sass目录
-const dirSass = path.resolve(__dirname,`src/${sourcePath}/assets/scss`);
 
 // 打包开发根目录
 const rootDir = environment == 'prod' ?
     'trunk' :
     'branches';
+
 //打包根域名
 const rootDomain = environment == 'prod' ?
-    'http://test.bch.abc.com' :
-    ( environment == 'dev' ? 'http://test.trunk.abc.com' : '' );
+    'http://test.trunk.abc.com' :
+    ( environment == 'dev' ? 'http://test.bch.abc.com' : '' );
+
+//项目输出目录根目录
 const outputDir = `../../${rootDir}/assets/app/vue/${outputPath}`;
 
-require(path.resolve(__dirname,`src/${sourcePath.split('/')[0]}/webpack.config.js`))
+const PAGES = 'pages';
+const COMMON = 'common';
+
+let pages = {};
+const pagesDir = fs.readdirSync(path.resolve(__dirname,`src/${sourcePath}/${PAGES}`));
+
+pagesDir.forEach(pageName=>{
+    let pagePath = path.resolve(__dirname,`src/${sourcePath}/${PAGES}`,pageName);
+    console.log('pageName',path.resolve(__dirname,`src/${sourcePath}/${PAGES}`,pageName))
+    let stat = fs.statSync(pagePath);
+    if(stat && stat.isDirectory()){
+        pages[pageName] = {
+            entry:`src/${sourcePath}/${PAGES}/${pageName}/main.js`,
+            template:`src/${sourcePath}/${PAGES}/${pageName}/public/index.html`,
+            filename : `${pageName}.html`,
+            title:pageName,
+            chunks : ['chunk-vendors', 'chunk-common', pageName],
+            subpage:`src/${sourcePath}/${PAGES}/${pageName}/subpage/main.js`
+        };
+    }
+});
+console.log('ppppages-',JSON.stringify(pages));
+
 var config = {
     outputDir,
     publicPath:`${rootDomain}/assets/app/vue/${outputPath}/`,
@@ -47,14 +81,7 @@ var config = {
     filenameHashing : false,
     lintOnSave : true,
     runtimeCompiler : true,
-    pages : {
-        [projectName] : {
-            entry:'src/'+sourcePath+'/main.js',
-            template:'src/'+sourcePath+'/public/index.html',
-            filename : 'index.html',
-            chunks : ['chunk-vendors', 'chunk-common', projectName]
-        }
-    },
+    pages,
     devServer : {
         historyApiFallback: true,
         hot: true,
@@ -67,17 +94,20 @@ var config = {
         //添加别名
         config.resolve.alias
             .set("@", resolve(`src/${sourcePath}`))
-            .set("assets", resolve(`src/${sourcePath}/assets`))
+            .set("pages", resolve(`src/${sourcePath}/${PAGES}`))
+            .set("common", resolve(`src/${sourcePath}/common`))
             .end();
 
         //resource-sass-loader 预处理的sass文件
+        //sass目录
+        const dirSass = path.resolve(__dirname,`src/${sourcePath}/${COMMON}/scss`);
         let resourceSassFiles = [];
-        if(fs.readdirSync(path.resolve(__dirname,`src/${sourcePath}/assets`)).indexOf('scss')!=-1){
+        if(fs.readdirSync(path.resolve(__dirname,`src/${sourcePath}/${COMMON}`)).indexOf('scss')!=-1){
             let files = fs.readdirSync(dirSass);
             files.forEach(file=>{
                 const fileName = path.resolve(dirSass, file);
                 let stat = fs.statSync(fileName);
-                if(stat.isFile() && /^\S+\.common.scss$/img.test(file)){
+                if(stat.isFile() && /^\S+\.common.scss$/im.test(file)){
                     resourceSassFiles.push(fileName);
                 }
             });
@@ -108,7 +138,7 @@ var config = {
             let x = mArr ? mArr[1] : 1;
 
 
-            let escapedImage = sheet.escaped_image;
+            escapedImage = sheet.escaped_image;
             escapedImage = `${rootDomain}/assets/app/vue/${outputPath}/img/${basename}.png`;
             sheet.escaped_image = escapedImage;
             console.log('pc(px)',basename, x + 'x','雪碧图图片路径:',sheet.escaped_image);
@@ -140,7 +170,7 @@ var config = {
             let mArr = basename.match(/-(\d+)x$/);
             let x = mArr ? mArr[1] : 1;
 
-            let escapedImage = sheet.escaped_image;
+            escapedImage = sheet.escaped_image;
             escapedImage = `${rootDomain}/assets/app/vue/${outputPath}/img/${basename}.png`;
             sheet.escaped_image = escapedImage;
             console.log('mobile(rem)',basename, x + 'x','雪碧图图片路径:',sheet.escaped_image);
@@ -166,18 +196,20 @@ var config = {
             return (shared + '\n' + perSprite).replace(/ {4}/g, '');
         };
 
-        ;(()=> {
-            let spritesDirs = fs.readdirSync(path.resolve(__dirname, `src/${sourcePath}/sprites`));
+        //[ 'page1', 'page2', 'page3' ]
+        pagesDir.forEach(pageName=>{
+            let spritesDirs = fs.readdirSync(path.resolve(__dirname, `src/${sourcePath}/${PAGES}/${pageName}/sprites`));
             if (spritesDirs.length > 0) {
                 let confs = [];
+                console.log('spritesDirsspritesDirsspritesDirs',spritesDirs)
                 spritesDirs.forEach(filename => {
-                    let stat = fs.statSync(path.resolve(__dirname, `src/${sourcePath}/sprites`, filename));
+                    let stat = fs.statSync(path.resolve(__dirname, `src/${sourcePath}/${PAGES}/${pageName}/sprites`, filename));
                     if (stat.isDirectory()) {
-                        let conf = generateSpritesmith(filename);
+                        let conf = generateSpritesmith(filename,pageName);
                         confs.push(conf[0]);
                         ;((conf)=>{
                             config
-                                .plugin(`spritesmith_${filename}`)
+                                .plugin(`spritesmith_${pageName}_${filename}`)
                                 .use(SpritesmithPlugin)
                                 .tap(args=>{
                                     return conf;
@@ -188,30 +220,33 @@ var config = {
                 });
                 fs.writeFileSync(path.resolve(__dirname,`log.json`),JSON.stringify(confs));
             }
-        })();
+       });
 
-        function generateSpritesmith(filename){
-            let cwd = path.resolve(__dirname, `src/${sourcePath}/sprites/${filename}`);
+        function generateSpritesmith(filename,pageName){
+            let cwd = path.resolve(__dirname, `src/${sourcePath}/${PAGES}/${pageName}/sprites/${filename}`);
             let target = {
-                image: path.resolve(__dirname, outputDir, `img/sprite_${filename}.png`),
+                image: path.resolve(__dirname, outputDir, `img/sprite_${pageName}_${filename}.png`),
                 css: []
             };
+            //sass目录
+            const dirSass = path.resolve(__dirname,`src/${sourcePath}/${PAGES}/${pageName}/assets/scss`);
+            console.log('saas dir',dirSass)
             if (targetPlatform.indexOf('original') !== -1) {
                 target.css.push(
                     // 默认生成的文件
-                    [path.resolve(dirSass, `sprite_${filename}o.scss`)]
+                    [path.resolve(dirSass, `sprite_${pageName}_${filename}o.scss`)]
                 );
             }
             if (targetPlatform.indexOf('mobile') !== -1) {
                 target.css.push(
                     // rem scss
-                    [path.resolve(dirSass, `sprite_${filename}.rem.scss`), { format: 'generateSpriteREM' }]
+                    [path.resolve(dirSass, `sprite_${pageName}_${filename}.rem.scss`), { format: 'generateSpriteREM' }]
                 );
             }
             if (targetPlatform.indexOf('pc') !== -1) {
                 target.css.push(
                     // pc scss
-                    [path.resolve(dirSass, `sprite_${filename}.px.scss`), { format: 'generateSpritePX' }],
+                    [path.resolve(dirSass, `sprite_${pageName}_${filename}.px.scss`), { format: 'generateSpritePX' }],
                 );
             }
             return [{

@@ -1,0 +1,17 @@
+@import "@/pages/page2/assets/scss/sprite_page2_home.rem.scss";
+
+.home{
+  background: red;
+  color:#fff;
+  border:5px solid green;
+}
+
+.bg-box{
+  width:rem(750);
+  height:rem(700);
+  background: url("~pages/page1/assets/images/logo.png") repeat;
+}
+
+.sprite_home{
+  display: block;
+}

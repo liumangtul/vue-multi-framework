@@ -1,32 +1,29 @@
-var fs = require('fs');
-var pathLib = require('path');
-var basePath = pathLib.resolve(__dirname,'src/');
-const dirs = ['assets','components','public','views','sprites'];
-const files = ['App.vue','main.js','router.js','store.js','../webpack.config.js'];
+/**
+ * node create.js [项目名称]/[版本号]
+ *  example
+ *          node create.js demo/v1.0.0
+ * */
 
-var path = process.argv.splice(2)[0];
-var pathReg = /^([0-9a-zA-Z-_]+\/)[vV]([0-9])[0-9.]{0,}$/img;
-if(!pathReg.test(path)){
-    console.error('目录格式有误',path);
+const fs = require('fs');
+const path = require('path');
+
+const args = process.argv.splice(2);
+const basePath = path.resolve(__dirname,'src/');
+const dirs = args[0];
+const files = ['webpack.config.js','createpage.js','compile.js'];
+const plist = ['common/scss','pages'];
+
+if(!/^([0-9a-zA-Z-_]+\/)[vV]([0-9])[0-9.]{0,}$/img.test(dirs)){
+    console.error('目录格式有误',dirs);
 }else{
-    console.log('----path----',path)
-    mkdir(pathLib.resolve(basePath,path),()=>{
-
-        dirs.forEach(dir=>{
-            mkdir(pathLib.resolve(basePath,path,dir),()=>{
-                console.log('---dir---',dir)
-                if(dir === 'public'){
-                    writeFile(
-                        pathLib.resolve(basePath,path,dir,'index.html'),
-                        fs.readFileSync(pathLib.resolve(__dirname,'tmpl/','public.html'))
-                    );
-                }
-            });
-        })
+    plist.forEach(dir=>{
+        mkdir(path.resolve(basePath,dirs,dir));
+    });
+    mkdir(path.resolve(basePath,dirs,'pages'),()=>{
         files.forEach(file=>{
             writeFile(
-                pathLib.resolve(basePath,path,file),
-                fs.readFileSync(pathLib.resolve(__dirname,'tmpl/',file))
+                path.resolve(basePath,dirs.split('/')[0],file),
+                fs.readFileSync(path.resolve(__dirname,'tmpl/',file))
             );
         })
     });
@@ -39,15 +36,18 @@ function mkdir(
     opt = {
         recursive : true
     }){
-    fs.mkdir(url,{
-        recursive:opt.recursive
-    },err=>{
-        if(err){
-            console.error('创建目录失败',err);
-            return false;
+    fs.mkdir(
+        url,
+        {recursive:opt.recursive},
+        err => {
+            if ( err ) {
+                console.error('创建项目目录失败',err);
+                return false;
+            }
+            console.log('---dirs---',dirs);
+            cb && cb(url,err);
         }
-        cb && cb(url,err);
-    });
+    );
 }
 
 function writeFile(
@@ -55,20 +55,23 @@ function writeFile(
     file = '',
     cb
 ){
-    fs.readFile(url,(err,data)=>{
-        if(err){
-            fs.writeFile(
-                url,
-                file,
-                err=>{
-                    if(err){
-                        console.error('写入'+file+'文件失败',err);
-                        return false;
-                    }
-                    cb && cb(url,file,err);
-                });
-        }else{
-            console.error('【WAR】写入文件失败:'+url.slice(url.lastIndexOf('/')+1)+'文件已存在')
+    fs.readFile(
+        url,
+        (err,data) => {
+            if(err){
+                fs.writeFile(
+                    url,
+                    file,
+                    err=>{
+                        if(err){
+                            console.error('写入文件失败',url,err);
+                            return false;
+                        }
+                        cb && cb(url,file,err);
+                    });
+            }else{
+                console.error('【WAR】写入被忽略:',url,'文件已存在')
+            }
         }
-    })
+    )
 }
