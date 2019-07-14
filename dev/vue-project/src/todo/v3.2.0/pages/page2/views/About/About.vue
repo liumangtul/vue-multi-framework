@@ -18,6 +18,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-  @import "pages/page1/views/About/about.scss";
+  @import "@/pages/page2/views/About/about.scss";
 </style>
 

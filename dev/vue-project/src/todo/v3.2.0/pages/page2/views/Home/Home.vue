@@ -2,7 +2,7 @@
   <div class="home_page">
     <Header/>
     <h1>This is an HOME page</h1>
-    <img src="pages/page1/assets/images/logo.png" alt="">
+    <img src="@/pages/page2/assets/images/logo.png" alt="">
     <div class="bg-box"></div>
     <div class="box home">HOME style test</div>
     <h3>雪碧图-a-b-c-d</h3>
@@ -14,12 +14,12 @@
 </template>
 
 <style lang="scss" scoped>
-  @import "@/pages/page1/views/home/home.scss";
+  @import "@/pages/page2/views/home/home.scss";
 </style>
 
 <script>
 
-import Header from 'pages/page1/components/Header.vue';
+import Header from '@/pages/page2/components/Header.vue';
 
 export default {
   components:{

@@ -94,8 +94,8 @@ var config = {
         //添加别名
         config.resolve.alias
             .set("@", resolve(`src/${sourcePath}`))
-            .set("pages", resolve(`src/${sourcePath}/${PAGES}`))
-            .set("common", resolve(`src/${sourcePath}/common`))
+            .set("$pages", resolve(`src/${sourcePath}/${PAGES}`))
+            .set("$common", resolve(`src/${sourcePath}/common`))
             .end();
 
         //resource-sass-loader 预处理的sass文件
