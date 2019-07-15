@@ -10,7 +10,7 @@ const path = require('path');
 const args = process.argv.splice(2);
 const basePath = path.resolve(__dirname,'src/');
 const dirs = args[0];
-const files = ['webpack.config.js','createpage.js','compile.js'];
+const files = ['webpack.config.js','createpage.js'];
 const plist = ['common/scss','pages'];
 
 if(!/^([0-9a-zA-Z-_]+\/)[vV]([0-9])[0-9.]{0,}$/img.test(dirs)){

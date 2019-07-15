@@ -1,0 +1,123 @@
+// SCSS variables are information about icon's compiled state, stored under its original file name
+//
+// .icon-home {
+//   width: $icon-home-width;
+// }
+//
+// The large array-like variables contain all information about a single icon
+// $icon-home: x y offset_x offset_y width height total_width total_height image_path;
+//
+// At the bottom of this section, we provide information about the spritesheet itself
+// $spritesheet: width height image $spritesheet-sprites;
+$b1-name: 'b1';
+$b1-x: 108px;
+$b1-y: 52px;
+$b1-offset-x: -108px;
+$b1-offset-y: -52px;
+$b1-width: 28px;
+$b1-height: 28px;
+$b1-total-width: 136px;
+$b1-total-height: 132px;
+$b1-image: '/Users/yan/Documents/github/vue-multi-framework/trunk/assets/app/vue/finance/v1/img/sprite_index_part2.png';
+$b1: (108px, 52px, -108px, -52px, 28px, 28px, 136px, 132px, '/Users/yan/Documents/github/vue-multi-framework/trunk/assets/app/vue/finance/v1/img/sprite_index_part2.png', 'b1', );
+$b2-name: 'b2';
+$b2-x: 0px;
+$b2-y: 52px;
+$b2-offset-x: 0px;
+$b2-offset-y: -52px;
+$b2-width: 88px;
+$b2-height: 30px;
+$b2-total-width: 136px;
+$b2-total-height: 132px;
+$b2-image: '/Users/yan/Documents/github/vue-multi-framework/trunk/assets/app/vue/finance/v1/img/sprite_index_part2.png';
+$b2: (0px, 52px, 0px, -52px, 88px, 30px, 136px, 132px, '/Users/yan/Documents/github/vue-multi-framework/trunk/assets/app/vue/finance/v1/img/sprite_index_part2.png', 'b2', );
+$b3-name: 'b3';
+$b3-x: 0px;
+$b3-y: 102px;
+$b3-offset-x: 0px;
+$b3-offset-y: -102px;
+$b3-width: 64px;
+$b3-height: 30px;
+$b3-total-width: 136px;
+$b3-total-height: 132px;
+$b3-image: '/Users/yan/Documents/github/vue-multi-framework/trunk/assets/app/vue/finance/v1/img/sprite_index_part2.png';
+$b3: (0px, 102px, 0px, -102px, 64px, 30px, 136px, 132px, '/Users/yan/Documents/github/vue-multi-framework/trunk/assets/app/vue/finance/v1/img/sprite_index_part2.png', 'b3', );
+$b4-name: 'b4';
+$b4-x: 0px;
+$b4-y: 0px;
+$b4-offset-x: 0px;
+$b4-offset-y: 0px;
+$b4-width: 136px;
+$b4-height: 32px;
+$b4-total-width: 136px;
+$b4-total-height: 132px;
+$b4-image: '/Users/yan/Documents/github/vue-multi-framework/trunk/assets/app/vue/finance/v1/img/sprite_index_part2.png';
+$b4: (0px, 0px, 0px, 0px, 136px, 32px, 136px, 132px, '/Users/yan/Documents/github/vue-multi-framework/trunk/assets/app/vue/finance/v1/img/sprite_index_part2.png', 'b4', );
+$spritesheet-width: 136px;
+$spritesheet-height: 132px;
+$spritesheet-image: '/Users/yan/Documents/github/vue-multi-framework/trunk/assets/app/vue/finance/v1/img/sprite_index_part2.png';
+$spritesheet-sprites: ($b1, $b2, $b3, $b4, );
+$spritesheet: (136px, 132px, '/Users/yan/Documents/github/vue-multi-framework/trunk/assets/app/vue/finance/v1/img/sprite_index_part2.png', $spritesheet-sprites, );
+
+// The provided mixins are intended to be used with the array-like variables
+//
+// .icon-home {
+//   @include sprite-width($icon-home);
+// }
+//
+// .icon-email {
+//   @include sprite($icon-email);
+// }
+//
+// Example usage in HTML:
+//
+// `display: block` sprite:
+// <div class="icon-home"></div>
+//
+// To change `display` (e.g. `display: inline-block;`), we suggest using a common CSS class:
+//
+// // CSS
+// .icon {
+//   display: inline-block;
+// }
+//
+// // HTML
+// <i class="icon icon-home"></i>
+@mixin sprite-width($sprite) {
+  width: nth($sprite, 5);
+}
+
+@mixin sprite-height($sprite) {
+  height: nth($sprite, 6);
+}
+
+@mixin sprite-position($sprite) {
+  $sprite-offset-x: nth($sprite, 3);
+  $sprite-offset-y: nth($sprite, 4);
+  background-position: $sprite-offset-x  $sprite-offset-y;
+}
+
+@mixin sprite-image($sprite) {
+  $sprite-image: nth($sprite, 9);
+  background-image: url(#{$sprite-image});
+}
+
+@mixin sprite($sprite) {
+  @include sprite-image($sprite);
+  @include sprite-position($sprite);
+  @include sprite-width($sprite);
+  @include sprite-height($sprite);
+}
+
+// The `sprites` mixin generates identical output to the CSS template
+//   but can be overridden inside of SCSS
+//
+// @include sprites($spritesheet-sprites);
+@mixin sprites($sprites) {
+  @each $sprite in $sprites {
+    $sprite-name: nth($sprite, 10);
+    .#{$sprite-name} {
+      @include sprite($sprite);
+    }
+  }
+}

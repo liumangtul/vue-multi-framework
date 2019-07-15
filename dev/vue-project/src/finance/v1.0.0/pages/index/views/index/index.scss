@@ -1,0 +1,13 @@
+@import "~common/scss/test_indexpage";
+@import "~pages/index/assets/scss/sprite_index_part1.rem.scss";
+@import "~pages/index/assets/scss/sprite_index_part2.rem.scss";
+
+h1{
+  color:green;
+}
+.bg{
+  width:rem(750);
+  height:rem(750);
+  background: url(~pages/index/assets/images/a.jpg) repeat;
+  background-size:rem(300);
+}

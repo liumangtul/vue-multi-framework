@@ -29,10 +29,10 @@ const projectName = environment == 'local' ?
 require(path.resolve(__dirname,`src/${projectName}/webpack.config.js`))
 
 //vx.x.x
-const version = global.pversion || new Utils().init().version;
-console.log('version----',version)
+const version = global.pversion || new Utils().init(path.resolve(__dirname,`src/${projectName}`)).version;
+
 //打包相对目录 example => demo/v1.0.0
-const sourcePath = `${projectName}/${version}`;
+const sourcePath = `${projectName}/v${version}`;
 
 //输出相对目录 example => demo/v1
 const outputPath = sourcePath.replace(/^(\S+\/)[vV]([0-9])[0-9.]{0,}$/img,'$1v$2');
@@ -94,8 +94,8 @@ var config = {
         //添加别名
         config.resolve.alias
             .set("@", resolve(`src/${sourcePath}`))
-            .set("$pages", resolve(`src/${sourcePath}/${PAGES}`))
-            .set("$common", resolve(`src/${sourcePath}/common`))
+            .set("pages", resolve(`src/${sourcePath}/${PAGES}`))
+            .set("common", resolve(`src/${sourcePath}/common`))
             .end();
 
         //resource-sass-loader 预处理的sass文件
@@ -114,7 +114,7 @@ var config = {
         }
         if(resourceSassFiles.length>0){
             // 配置全局scss
-            const oneOfsMap = config.module.rule('scss').oneOfs.store
+            const oneOfsMap = config.module.rule('scss').oneOfs.store;
             //insert loader
             oneOfsMap.forEach(item => {
                 item
@@ -234,7 +234,7 @@ var config = {
             if (targetPlatform.indexOf('original') !== -1) {
                 target.css.push(
                     // 默认生成的文件
-                    [path.resolve(dirSass, `sprite_${pageName}_${filename}o.scss`)]
+                    [path.resolve(dirSass, `sprite_${pageName}_${filename}.o.scss`)]
                 );
             }
             if (targetPlatform.indexOf('mobile') !== -1) {
