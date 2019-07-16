@@ -2,6 +2,8 @@
   <div class="warp">
     <router-link to="/index">index</router-link>
     <br>
+    <router-link to="/detail">detail</router-link>
+    <br>
     <router-view></router-view>
   </div>
 </template>

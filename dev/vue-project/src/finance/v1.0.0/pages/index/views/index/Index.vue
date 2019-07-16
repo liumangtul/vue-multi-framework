@@ -1,6 +1,9 @@
 <template>
     <div>
         <h1>index.page</h1>
+        <img src="./images/x.png" alt="">
+        <div class="xpic"></div>
+        <hr>
         <img src="~common/images/b.jpg" alt="common">
         <img src="~common/images/c.png" alt="commonc">
         <h2 class="sub_title">sub title</h2>

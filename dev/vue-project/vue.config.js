@@ -66,8 +66,8 @@ pagesDir.forEach(pageName=>{
             template:`src/${sourcePath}/${PAGES}/${pageName}/public/index.html`,
             filename : `${pageName}.html`,
             title:pageName,
-            chunks : ['chunk-vendors', 'chunk-common', pageName],
-            subpage:`src/${sourcePath}/${PAGES}/${pageName}/subpage/main.js`
+            chunks : ['chunk-vendors', 'chunk-common', pageName]//,
+            // subpage:`src/${sourcePath}/${PAGES}/${pageName}/subpage/main.js`
         };
     }
 });
@@ -198,6 +198,7 @@ var config = {
 
         //[ 'page1', 'page2', 'page3' ]
         pagesDir.forEach(pageName=>{
+            //雪碧图
             let spritesDirs = fs.readdirSync(path.resolve(__dirname, `src/${sourcePath}/${PAGES}/${pageName}/sprites`));
             if (spritesDirs.length > 0) {
                 let confs = [];
@@ -221,6 +222,49 @@ var config = {
                 fs.writeFileSync(path.resolve(__dirname,`log.json`),JSON.stringify(confs));
             }
        });
+
+        //输出文件
+        config.module
+            .rule('images')
+            .use('url-loader')
+            .tap(options => {
+                return {
+                    limit: 4096,
+                    fallback: {
+                        loader: 'file-loader',
+                        options: {
+                            name: resourcePath => {
+                                let path = 'img/';
+                                if(resourcePath.indexOf(`${sourcePath}/${COMMON}/images/`)!= -1){
+                                    var rpath=resourcePath.replace(new RegExp(`^\\S+${sourcePath}\\/(${COMMON})\\/images\\/([^\\.]+\\/)?([^\\.^\\/]+\\.[^\\.^\\/]+)$`,'img'),'$2').replace(/[\/]{1,}/img,'_');
+                                    console.log('ssssssssssss',rpath)
+                                    path += COMMON+'/'+rpath;
+                                }else if(resourcePath.indexOf(`${sourcePath}/${PAGES}`)!= -1){
+                                    path += PAGES+'/';
+
+                                    pagesDir.forEach(pageName => {
+                                        if(resourcePath.indexOf(`${sourcePath}/${PAGES}/${pageName}`) != -1){
+                                            var rpath=resourcePath.replace(new RegExp(`^\\S+${sourcePath}\\/(${PAGES})\\/(${pageName})\\/([^\\.]+\\/)?([^\\.^\\/]+\\.[^\\.^\\/]+)$`,'img'),'$2/$3');
+                                            rpath = rpath.replace(/^(\S+\/)images\/$/img,'$1').replace(/[\/]{1,}/img,'_');
+                                            console.log('')
+                                            console.log('pagespagespages-----',rpath)
+                                            console.log('aa-',resourcePath)
+                                            console.log('')
+                                            path += rpath;
+                                        }
+                                    });
+                                }else{
+                                    path += 'assets/'
+                                }
+                                // console.log('dddddddd',resourcePath);
+                                console.log('');
+
+                                return `${path}[name].[ext]`
+                            }
+                        }
+                    }
+                };
+            })
 
         function generateSpritesmith(filename,pageName){
             let cwd = path.resolve(__dirname, `src/${sourcePath}/${PAGES}/${pageName}/sprites/${filename}`);

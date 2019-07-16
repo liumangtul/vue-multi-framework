@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import Index from './views/index/Index'
+import Detail from './views/detail/Index'
 
 Vue.use(Router)
 
@@ -13,6 +14,10 @@ export default new Router({
           path: '/index',
           name: 'index',
           component: Index
+      },{
+          path:'/detail',
+          name:'detail',
+          component:Detail
       }
   ]
 })
