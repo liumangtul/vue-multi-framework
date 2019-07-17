@@ -4,9 +4,10 @@
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve --name",
-    "watch": "vue-cli-service build --name --env --no-clean --watch",
+    "watch": "vue-cli-service build --mode development --name --env --watch --hot --progress",
     "build": "vue-cli-service build --name --env --no-clean prod",
-    "lint": "vue-cli-service lint --name"
+    "lint": "vue-cli-service lint --name",
+    "inspect": "vue-cli-service inspect"
   },
   "dependencies": {
     "core-js": "^2.6.5",

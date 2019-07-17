@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h1>company page</h1>
+    <h1>PAGES/company</h1>
     <router-view></router-view>
   </div>
 </template>

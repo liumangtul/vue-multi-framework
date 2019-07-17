@@ -21,10 +21,10 @@ const args = process.argv.splice(2);
 const environment = args[0] == 'build' ?
     ( args.length == 6 && args[4] == 'prod' ? 'prod' : 'dev' ) :
     'local';
-
+console.log('arguments-----',args)
 const projectName = environment == 'local' ?
                     args[2] :
-                    args[5];
+                    args[args.length - 1];
 
 require(path.resolve(__dirname,`src/${projectName}/webpack.config.js`))
 
@@ -82,12 +82,6 @@ var config = {
     lintOnSave : true,
     runtimeCompiler : true,
     pages,
-    devServer : {
-        historyApiFallback: true,
-        hot: true,
-        inline: true,
-        progress:true
-    },
     chainWebpack: config => {
         // 修复HMR
         config.resolve.symlinks(true);
