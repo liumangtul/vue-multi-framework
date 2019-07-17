@@ -23,7 +23,7 @@ npm install
 path:vue-project
   npm run build demo 打包到trunks下
   npm run watch demo 打包到branches下 
- 
+  npm run serve demo http://localhost:8080/...index.html
 ```
 
 ### Customize configuration

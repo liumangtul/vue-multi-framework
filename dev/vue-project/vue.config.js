@@ -72,7 +72,6 @@ pagesDir.forEach(pageName=>{
     }
 });
 console.log('ppppages-',JSON.stringify(pages));
-
 var config = {
     outputDir,
     publicPath:`${rootDomain}/assets/app/vue/${outputPath}/`,
@@ -81,6 +80,8 @@ var config = {
     filenameHashing : false,
     lintOnSave : true,
     runtimeCompiler : true,
+    devServer: {
+    },
     pages,
     chainWebpack: config => {
         // 修复HMR
@@ -308,6 +309,9 @@ var config = {
         }
     }
 };
+let proxy = require(path.resolve(__dirname,`src/${projectName}/devServerProxy.js`));
+console.log('proxy-----',proxy)
+if(Object.keys(proxy).length>0)config.devServer.proxy = proxy;
 
 console.log('输出路径---->',path.resolve(`../../${rootDir}/assets/app/vue/${outputPath}`));
 
