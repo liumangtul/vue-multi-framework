@@ -10,8 +10,10 @@ const path = require('path');
 const args = process.argv.splice(2);
 const basePath = path.resolve(__dirname,'src/');
 const dirs = args[0];
-const files = ['webpack.config.js','createpage.js','devServerProxy.js'];
-const plist = ['common/scss','pages'];
+const files = ['webpack.config.js','createpage.js','devServerProxy.js',{
+    common:['js/api.js']
+}];
+const plist = ['common/scss','pages','common/js'];
 
 if(!/^([0-9a-zA-Z-_]+\/)[vV]([0-9])[0-9.]{0,}$/img.test(dirs)){
     console.error('目录格式有误',dirs);
@@ -21,10 +23,23 @@ if(!/^([0-9a-zA-Z-_]+\/)[vV]([0-9])[0-9.]{0,}$/img.test(dirs)){
     });
     mkdir(path.resolve(basePath,dirs,'pages'),()=>{
         files.forEach(file=>{
-            writeFile(
-                path.resolve(basePath,dirs.split('/')[0],file),
-                fs.readFileSync(path.resolve(__dirname,'tmpl/',file))
-            );
+            if(typeof file == 'string'){
+                writeFile(
+                    path.resolve(basePath,dirs.split('/')[0],file),
+                    fs.readFileSync(path.resolve(__dirname,'tmpl/',file))
+                );
+            }else{
+                for(let key in file){
+                    if(key == 'common'){
+                        file[key].forEach(item=>{
+                            writeFile(
+                                path.resolve(basePath,dirs,key,item),
+                                fs.readFileSync(path.resolve(__dirname,'tmpl/',key,item))
+                            );
+                        });
+                    }
+                }
+            }
         })
     });
 }
