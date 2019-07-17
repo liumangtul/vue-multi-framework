@@ -8,7 +8,7 @@ var fs = require('fs');
 var path = require('path');
 var Utils = require('../../webpack/utils.js');
 
-const dirs = ['assets','components','public','views','sprites','api'];
+const dirs = ['assets','components','public','views','sprites'];
 const files = ['App.vue','main.js','router.js','store.js'];
 const args = process.argv.splice(2);
 const pageName = args[0].split(',');
@@ -38,11 +38,6 @@ function createPage(pageName){
                 writeFile(
                     path.resolve(__dirname,basePath,PAGES,pageName,dir,'index.html'),
                     fs.readFileSync(path.resolve(__dirname,'../../tmpl/','public.html'))
-                );
-            }else if(dir == 'api'){
-                writeFile(
-                    path.resolve(__dirname,basePath,PAGES,pageName,dir,'api.js'),
-                    fs.readFileSync(path.resolve(__dirname,'../../tmpl/','api.js'))
                 );
             }
         });
